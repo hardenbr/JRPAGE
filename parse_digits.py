@@ -31,6 +31,7 @@ def line_to_matrix(line):
     split = line.split(",")
     
     #remove the first elemnt it is just the label
+    label = split[0]
     split = split[1:]
 
     matrix = []  #[x][y] coordinates
@@ -43,21 +44,47 @@ def line_to_matrix(line):
         exit(1)
 
     #append the line values to the matrix
-    for xx in range(PIXEL_X):
+    for yy in range(PIXEL_Y):
         matrix.append([])
-        for yy in range(PIXEL_Y):
-            index = xx*PIXEL_X + yy
-            matrix[xx].append(split[index])
+        for xx in range(PIXEL_X):
+            index = PIXEL_X * yy + xx
+            matrix[yy].append(int(split[index]))
 
-    return matrix
+    return (label,matrix)
 
 #builds a th2d from the pixel matrix
-def matrix_to_th2d(matrix): pass
+def matrix_to_th2d(matrix, name): 
+    hist = rt.TH2D(name,name,PIXEL_X,0,PIXEL_X-1,PIXEL_Y,0,PIXEL_Y-1)
+    for xx in range(PIXEL_X):
+        for yy in range(PIXEL_Y):
+            hist.Fill(yy,(PIXEL_X-xx),matrix[xx][yy])
+
+    return hist
+
+def draw_line(line): pass
     
 #read in the pixels lines
 in_file = open(options.file,"r")
 in_file_lines = map(lambda x: x.rstrip("\r\n"),in_file.readlines())
 
-for line in in_file_lines[:2]:
-    print line_to_matrix(line)
+out_file = rt.TFile("test.root","RECREATE")
 
+#loop over lines
+for line in in_file_lines[:10]:
+    index = in_file_lines.index(line)
+
+    if index % 100 == 0:
+        print "analyzing index", index
+
+
+    (label,matrix) = line_to_matrix(line)
+    name = "hist_%i_label_%s" % (index,label)
+    hist = matrix_to_th2d(matrix, name)
+    print label
+
+    hist.Write()
+
+out_file.Close()
+
+#pause to draw
+#raw_input("RAW INPUT")
